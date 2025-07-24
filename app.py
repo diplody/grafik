@@ -3,12 +3,13 @@ from datetime import date, datetime
 from PIL import Image, ImageDraw, ImageFont
 import io
 import calendar
+import locale
 
 # Lista pracowników
 pracownicy = ["Michał", "Gosia", "Dawid", "Damian", "Kasia", "Ola", "Aurelia", "Oskar", "Olaf"]
 
 def create_schedule_image(dzien, kursy):
-    import locale
+   
     locale.setlocale(locale.LC_TIME, "pl_PL.UTF-8")  # ustawienie języka polskiego
 
     dzien_obj = datetime.strptime(dzien, "%Y-%m-%d")
