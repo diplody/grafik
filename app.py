@@ -87,14 +87,20 @@ def main():
             kier = st.selectbox(f"Kierownik kursu {idx+1}", options=[""] + pracownicy, index=pracownicy.index(kurs["kierownik"]) + 1 if kurs["kierownik"] in pracownicy else 0, key=f"kier_{idx}")
 
             mozliwi_pomocnicy = [p for p in pracownicy if p != kier]
-            pomoc = st.multiselect(f"Pomocnicy kursu {idx+1}", options=mozliwi_pomocnicy, default=[p for p in kurs["pomocnicy"] if p in mozliwi_pomocnicy], key=f"pomoc_{idx}_fixed")
+           pomoc = st.multiselect(
+    f"Pomocnicy kursu {idx+1}",
+    options=mozliwi_pomocnicy,
+    default=[p for p in kurs["pomocnicy"] if p in mozliwi_pomocnicy],
+    key=f"pomoc_{idx}_fixed"
+)
 
             st.session_state.kursy[idx]["godzina"] = godz
             st.session_state.kursy[idx]["kierownik"] = kier if kier else None
             st.session_state.kursy[idx]["pomocnicy"] = pomoc
 
-            if godz:
-                zajete_godziny.add(godz)
+            if kurs["godzina"]:
+    zajete_godziny.add(kurs["godzina"])
+
 
             if idx > 0 and idx == len(st.session_state.kursy) - 1:
                 if st.button(f"❌ Usuń kurs {idx+1}", key=f"usun_{idx}"):
