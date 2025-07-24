@@ -20,12 +20,14 @@ def create_schedule_image(dzien, kursy):
 
     img = Image.new('RGB', (szerokosc, wysokosc), color='#f9f9f9')
     draw = ImageDraw.Draw(img)
-
+    
     try:
-        font_title = ImageFont.truetype("arial.ttf", 36)
-        font_header = ImageFont.truetype("arial.ttf", 24)
-        font = ImageFont.truetype("arial.ttf", 20)
+        # Arial może nie mieć polskich znaków, dlatego lepiej DejaVuSans
+        font_title = ImageFont.truetype("DejaVuSans.ttf", 48)
+        font_header = ImageFont.truetype("DejaVuSans.ttf", 36)
+        font = ImageFont.truetype("DejaVuSans.ttf", 28)
     except:
+        # fallback do domyślnej, ale może brakować polskich znaków
         font_title = ImageFont.load_default()
         font_header = ImageFont.load_default()
         font = ImageFont.load_default()
