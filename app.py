@@ -8,9 +8,13 @@ import calendar
 pracownicy = ["Michał", "Gosia", "Dawid", "Damian", "Kasia", "Ola", "Aurelia", "Oskar", "Olaf"]
 
 def create_schedule_image(dzien, kursy):
-    dzien_datetime = datetime.strptime(dzien, "%Y-%m-%d")
-    dzien_nazwa = calendar.day_name[dzien_datetime.weekday()].capitalize()
-    tytul = f"Grafik na {dzien_nazwa} {dzien_datetime.strftime('%d.%m')}"
+    import locale
+    locale.setlocale(locale.LC_TIME, "pl_PL.UTF-8")  # ustawienie języka polskiego
+
+    dzien_obj = datetime.strptime(dzien, "%Y-%m-%d")
+    dzien_tygodnia = dzien_obj.strftime('%A').lower()
+    dzien_formatted = dzien_obj.strftime('%d.%m')
+    tytul = f"Grafik na {dzien_tygodnia} {dzien_formatted}"
 
     # Wymiary i styl
     base_width = 600
