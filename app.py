@@ -13,13 +13,17 @@ def create_schedule_image(dzien, kursy):
     draw = ImageDraw.Draw(img)
 
     try:
+        font_title = ImageFont.truetype("arial.ttf", 24)
         font = ImageFont.truetype("arial.ttf", 18)
     except:
+        font_title = ImageFont.load_default()
         font = ImageFont.load_default()
 
-    draw.text((10, 10), f"Grafik na dzień: {dzien}", fill='black', font=font)
+    tytul = f"Grafik na dzień: {dzien}"
+    text_width = draw.textlength(tytul, font=font_title)
+    draw.text(((szerokosc - text_width) / 2, 10), tytul, fill='black', font=font_title)
 
-    start_y = 50
+    start_y = 60
     draw.text((10, start_y), "Godzina", fill='black', font=font)
     draw.text((150, start_y), "Kierownik", fill='black', font=font)
     draw.text((350, start_y), "Pomocnicy", fill='black', font=font)
@@ -60,14 +64,25 @@ def main():
 
     st.write("### Kursy / Zmiany")
 
+    zajete_godziny = set()
+
     for idx, kurs in enumerate(st.session_state.kursy):
         expanded = True if idx == len(st.session_state.kursy) - 1 else False
         with st.expander(f"Kurs {idx+1}", expanded=expanded):
             godzina_typ = st.radio(f"Wybierz opcję godziny dla kursu {idx+1}", ["Z listy", "Wpisz ręcznie"], key=f"typ_godz_{idx}")
+            poprzednia_godzina = st.session_state.kursy[idx - 1]["godzina"] if idx > 0 else None
+
             if godzina_typ == "Z listy":
-                godz = st.selectbox(f"Godzina kursu {idx+1}", options=[""] + godziny_domyslne, index=godziny_domyslne.index(kurs["godzina"]) + 1 if kurs["godzina"] in godziny_domyslne else 0, key=f"godz_{idx}")
+                dostepne_godziny = [g for g in godziny_domyslne if g not in zajete_godziny and (idx == 0 or g > poprzednia_godzina)]
+                godz = st.selectbox(f"Godzina kursu {idx+1}", options=[""] + dostepne_godziny, index=dostepne_godziny.index(kurs["godzina"]) + 1 if kurs["godzina"] in dostepne_godziny else 0, key=f"godz_{idx}")
             else:
                 godz = st.text_input(f"Godzina kursu {idx+1}", value=kurs["godzina"], key=f"godz_input_{idx}")
+                if godz in zajete_godziny:
+                    st.warning("Ta godzina została już wybrana.")
+                    godz = ""
+                elif idx > 0 and poprzednia_godzina and godz <= poprzednia_godzina:
+                    st.warning("Godzina musi być późniejsza niż w poprzednim kursie.")
+                    godz = ""
 
             kier = st.selectbox(f"Kierownik kursu {idx+1}", options=[""] + pracownicy, index=pracownicy.index(kurs["kierownik"]) + 1 if kurs["kierownik"] in pracownicy else 0, key=f"kier_{idx}")
 
@@ -77,6 +92,9 @@ def main():
             st.session_state.kursy[idx]["godzina"] = godz
             st.session_state.kursy[idx]["kierownik"] = kier if kier else None
             st.session_state.kursy[idx]["pomocnicy"] = pomoc
+
+            if godz:
+                zajete_godziny.add(godz)
 
             if idx > 0 and idx == len(st.session_state.kursy) - 1:
                 if st.button(f"❌ Usuń kurs {idx+1}", key=f"usun_{idx}"):
