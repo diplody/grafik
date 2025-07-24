@@ -42,7 +42,7 @@ def main():
 
     dzien = st.date_input("Wybierz dzień:", value=date.today())
     dzien_tyg = datetime.strptime(str(dzien), "%Y-%m-%d").weekday()
-    
+
     if dzien_tyg < 5:
         godziny_domyslne = ["9:30", "12:00", "15:20", "17:30"]
     else:
@@ -54,10 +54,15 @@ def main():
     def dodaj_kurs():
         st.session_state.kursy.append({"godzina": "", "kierownik": None, "pomocnicy": []})
 
+    def usun_kurs(idx):
+        if len(st.session_state.kursy) > 1:
+            st.session_state.kursy.pop(idx)
+
     st.write("### Kursy / Zmiany")
 
     for idx, kurs in enumerate(st.session_state.kursy):
-        with st.expander(f"Kurs {idx+1}"):
+        expanded = True if idx == len(st.session_state.kursy) - 1 else False
+        with st.expander(f"Kurs {idx+1}", expanded=expanded):
             godzina_typ = st.radio(f"Wybierz opcję godziny dla kursu {idx+1}", ["Z listy", "Wpisz ręcznie"], key=f"typ_godz_{idx}")
             if godzina_typ == "Z listy":
                 godz = st.selectbox(f"Godzina kursu {idx+1}", options=[""] + godziny_domyslne, index=godziny_domyslne.index(kurs["godzina"]) + 1 if kurs["godzina"] in godziny_domyslne else 0, key=f"godz_{idx}")
@@ -73,11 +78,12 @@ def main():
             st.session_state.kursy[idx]["kierownik"] = kier if kier else None
             st.session_state.kursy[idx]["pomocnicy"] = pomoc
 
-        # Dodaj przycisk tylko po uzupełnieniu aktualnego kursu
-        if idx == len(st.session_state.kursy) - 1:
-            if kurs["godzina"] and kurs["kierownik"]:
-                if st.button("➕ Dodaj kolejny kurs"):
-                    dodaj_kurs()
+            if idx == len(st.session_state.kursy) - 1 and len(st.session_state.kursy) > 1:
+                if st.button(f"❌ Usuń kurs {idx+1}", key=f"usun_{idx}"):
+                    usun_kurs(idx)
+                    st.experimental_rerun()
+
+    st.button("➕ Dodaj kolejny kurs", on_click=dodaj_kurs)
 
     if st.button("🎨 Generuj grafik"):
         kursy_do_wykresu = [k for k in st.session_state.kursy if k["godzina"] and k["kierownik"]]
@@ -92,4 +98,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
