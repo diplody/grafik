@@ -13,7 +13,7 @@ def create_schedule_image(dzien, kursy):
     draw = ImageDraw.Draw(img)
 
     try:
-        font_title = ImageFont.truetype("arial.ttf", 28)
+        font_title = ImageFont.truetype("arial.ttf", 24)
         font = ImageFont.truetype("arial.ttf", 18)
     except:
         font_title = ImageFont.load_default()
@@ -42,10 +42,14 @@ def create_schedule_image(dzien, kursy):
     return img
 
 def main():
-    st.title("Grafik Zmian - Twój Plan")
+    st.title("Kreator Grafiku LKD")
 
     dzien = st.date_input("Wybierz dzień:", value=date.today())
-    dzien_tyg = datetime.strptime(str(dzien), "%Y-%m-%d").weekday()
+    if "wybrany_dzien" not in st.session_state or st.session_state.wybrany_dzien != dzien:
+        st.session_state.wybrany_dzien = dzien
+        st.session_state.kursy = [{"godzina": "", "kierownik": None, "pomocnicy": []}]
+
+    dzien_tyg = dzien.weekday()
 
     if dzien_tyg < 5:
         godziny_domyslne = ["9:30", "12:00", "15:20", "17:30"]
@@ -64,48 +68,47 @@ def main():
 
     st.write("### Kursy / Zmiany")
 
-    zajete_godziny = set()
-
     for idx, kurs in enumerate(st.session_state.kursy):
+        godzina = kurs["godzina"]
+        kierownik = kurs["kierownik"] or ""
+        pomocnicy = kurs["pomocnicy"]
+        pomoc_str = ", ".join(pomocnicy) if pomocnicy else ""
+        tytul_kursu = f"Kurs {idx+1}"
+        if godzina:
+            tytul_kursu += f"   {godzina}"
+        if kierownik:
+            tytul_kursu += f"   {kierownik}"
+        if pomocnicy:
+            tytul_kursu += f" + {pomoc_str}"
+
         expanded = True if idx == len(st.session_state.kursy) - 1 else False
-        kurs_info = f"Kurs {idx+1}   {kurs['godzina'] or '-'}   {kurs['kierownik'] or '-'}"
-        if kurs["pomocnicy"]:
-            kurs_info += " + " + ", ".join(kurs["pomocnicy"])
-        with st.expander(kurs_info, expanded=expanded):
+        with st.expander(tytul_kursu, expanded=expanded):
             godzina_typ = st.radio(f"Wybierz opcję godziny dla kursu {idx+1}", ["Z listy", "Wpisz ręcznie"], key=f"typ_godz_{idx}")
 
             if godzina_typ == "Z listy":
-                dostepne_godziny = [g for g in godziny_domyslne if g not in zajete_godziny or g == kurs["godzina"]]
-                godz = st.selectbox(f"Godzina kursu {idx+1}", options=[""] + dostepne_godziny,
-                                   index=dostepne_godziny.index(kurs["godzina"]) + 1 if kurs["godzina"] in dostepne_godziny else 0,
-                                   key=f"godz_{idx}")
+                godz = st.selectbox(f"Godzina kursu {idx+1}", options=[""] + godziny_domyslne, index=godziny_domyslne.index(kurs["godzina"]) + 1 if kurs["godzina"] in godziny_domyslne else 0, key=f"godz_{idx}")
             else:
                 godz = st.text_input(f"Godzina kursu {idx+1}", value=kurs["godzina"], key=f"godz_input_{idx}")
 
-            if godz:
-                zajete_godziny.add(godz)
+            if godz != kurs["godzina"]:
+                st.session_state.kursy[idx]["godzina"] = godz
 
-            poprzedni_kierownik = kurs["kierownik"]
-            kier = st.selectbox(f"Kierownik kursu {idx+1}", options=[""] + pracownicy,
-                                index=pracownicy.index(kier) + 1 if (kier := kurs["kierownik"]) in pracownicy else 0,
-                                key=f"kier_{idx}")
+            kier = st.selectbox(f"Kierownik kursu {idx+1}", options=[""] + pracownicy, index=pracownicy.index(kurs["kierownik"]) + 1 if kurs["kierownik"] in pracownicy else 0, key=f"kier_{idx}")
 
-            # Jeśli kierownik się zmienił - czyścimy pomocników
-            if poprzedni_kierownik != kier:
+            if kier != kurs["kierownik"]:
                 st.session_state.kursy[idx]["pomocnicy"] = []
 
-            # Pomocnicy pojawiają się tylko jeśli kierownik jest wybrany
+            st.session_state.kursy[idx]["kierownik"] = kier if kier else None
+
             if kier:
                 mozliwi_pomocnicy = [p for p in pracownicy if p != kier]
-                pomoc = st.multiselect(f"Pomocnicy kursu {idx+1}", options=mozliwi_pomocnicy,
-                                       default=st.session_state.kursy[idx]["pomocnicy"], key=f"pomoc_{idx}")
-            else:
-                st.write("**Wybierz najpierw kierownika, aby dodać pomocników**")
-                pomoc = []
-
-            st.session_state.kursy[idx]["godzina"] = godz
-            st.session_state.kursy[idx]["kierownik"] = kier if kier else None
-            st.session_state.kursy[idx]["pomocnicy"] = pomoc
+                pomoc = st.multiselect(
+                    f"Pomocnicy kursu {idx+1}",
+                    options=mozliwi_pomocnicy,
+                    default=st.session_state.kursy[idx]["pomocnicy"],
+                    key=f"pomoc_{idx}_fixed"
+                )
+                st.session_state.kursy[idx]["pomocnicy"] = pomoc
 
             if idx > 0 and idx == len(st.session_state.kursy) - 1:
                 if st.button(f"❌ Usuń kurs {idx+1}", key=f"usun_{idx}"):
