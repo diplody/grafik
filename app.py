@@ -2,62 +2,63 @@ import streamlit as st
 from datetime import date, datetime
 from PIL import Image, ImageDraw, ImageFont
 import io
-import calendar
 
 # Lista pracowników
 pracownicy = ["Michał", "Gosia", "Dawid", "Damian", "Kasia", "Ola", "Aurelia", "Oskar", "Olaf"]
 
 def create_schedule_image(dzien, kursy):
-    dzien_datetime = datetime.strptime(dzien, "%Y-%m-%d")
-    dzien_nazwa = calendar.day_name[dzien_datetime.weekday()].capitalize()
-    tytul = f"Grafik na {dzien_nazwa} {dzien_datetime.strftime('%d.%m')}"
+    dni_polskie = ["poniedziałek", "wtorek", "środa", "czwartek", "piątek", "sobota", "niedziela"]
+    dzien_obj = datetime.strptime(dzien, "%Y-%m-%d")
+    dzien_tygodnia = dni_polskie[dzien_obj.weekday()]
+    dzien_formatted = dzien_obj.strftime('%d.%m')
+    tytul = f"Grafik na {dzien_tygodnia} {dzien_formatted}"
 
-    # Wymiary i styl
-    base_width = 600
-    line_height = 50
-    extra_width = 100 if any(len(k["pomocnicy"]) >= 3 for k in kursy) else 0
-    szerokosc = base_width + extra_width
-    wysokosc = 100 + line_height * len(kursy) + 20
+    szerokosc = 800
+    if any(len(k["pomocnicy"]) >= 3 for k in kursy):
+        szerokosc += 100
+    wysokosc = 160 + 60 * len(kursy)
 
-    img = Image.new('RGB', (szerokosc, wysokosc), color='white')
+    img = Image.new('RGB', (szerokosc, wysokosc), color='#f9f9f9')
     draw = ImageDraw.Draw(img)
 
     try:
-        font_title = ImageFont.truetype("DejaVuSans-Bold.ttf", 28)
-        font_header = ImageFont.truetype("DejaVuSans-Bold.ttf", 22)
-        font = ImageFont.truetype("DejaVuSans.ttf", 20)
+        font_title = ImageFont.truetype("arial.ttf", 36)
+        font_header = ImageFont.truetype("arial.ttf", 24)
+        font = ImageFont.truetype("arial.ttf", 20)
     except:
         font_title = ImageFont.load_default()
         font_header = ImageFont.load_default()
         font = ImageFont.load_default()
 
-    # Tytuł
+    # Nagłówek
     title_width = draw.textlength(tytul, font=font_title)
-    draw.text(((szerokosc - title_width) / 2, 10), tytul, fill='black', font=font_title)
+    draw.text(((szerokosc - title_width) / 2, 20), tytul, fill='black', font=font_title)
 
-    # Nagłówki kolumn
     col_width = szerokosc // 3
-    y_start = 70
+    y = 100
+    row_height = 60
+
     headers = ["Godzina", "Kierownik", "Pomocnicy"]
     for i, header in enumerate(headers):
-        x = i * col_width + (col_width - draw.textlength(header, font=font_header)) / 2
-        draw.text((x, y_start), header, fill='black', font=font_header)
+        x_center = (i * col_width) + (col_width // 2)
+        w = draw.textlength(header, font=font_header)
+        draw.text((x_center - w / 2, y), header, fill='black', font=font_header)
 
-    # Linie poziome
-    y_line = y_start + 30
-    draw.line([(10, y_line), (szerokosc - 10, y_line)], fill='black')
+    y += 40
+    draw.line([(20, y), (szerokosc - 20, y)], fill='black')
 
-    # Kursy
-    y = y_line + 10
     for kurs in kursy:
+        y += 10
         godz = kurs["godzina"]
         kier = kurs["kierownik"] or "-"
         pomoc = ", ".join(kurs["pomocnicy"]) if kurs["pomocnicy"] else "-"
+
         values = [godz, kier, pomoc]
         for i, val in enumerate(values):
-            x = i * col_width + 10
-            draw.text((x, y), val, fill='black', font=font)
-        y += line_height
+            x_center = (i * col_width) + (col_width // 2)
+            w = draw.textlength(val, font=font)
+            draw.text((x_center - w / 2, y), val, fill='black', font=font)
+        y += row_height
 
     return img
 
@@ -66,22 +67,16 @@ def main():
     st.title("Kreator Grafiku LKD")
 
     dzien = st.date_input("Wybierz dzień:", value=date.today())
-    dzien_tyg = datetime.strptime(str(dzien), "%Y-%m-%d").weekday()
 
+    dzien_tyg = datetime.strptime(str(dzien), "%Y-%m-%d").weekday()
     if dzien_tyg < 5:
         godziny_domyslne = ["9:30", "12:00", "15:20", "17:30"]
     else:
         godziny_domyslne = ["9:15", "11:25", "13:35", "15:45", "17:30"]
 
-    if "selected_day" not in st.session_state:
-        st.session_state.selected_day = dzien
-
-    if dzien != st.session_state.selected_day:
+    if "kursy" not in st.session_state or st.session_state.get("last_date") != dzien:
         st.session_state.kursy = [{"godzina": "", "kierownik": None, "pomocnicy": []}]
-        st.session_state.selected_day = dzien
-
-    if "kursy" not in st.session_state:
-        st.session_state.kursy = [{"godzina": "", "kierownik": None, "pomocnicy": []}]
+        st.session_state.last_date = dzien
 
     def dodaj_kurs():
         st.session_state.kursy.append({"godzina": "", "kierownik": None, "pomocnicy": []})
@@ -93,27 +88,37 @@ def main():
     st.write("### Kursy / Zmiany")
 
     for idx, kurs in enumerate(st.session_state.kursy):
-        opis = f"Kurs {idx+1}"
-        if kurs["godzina"]:
-            opis += f"   {kurs['godzina']}"
-        if kurs["kierownik"]:
-            opis += f"   {kurs['kierownik']}"
-        if kurs["pomocnicy"]:
-            opis += f" + {', '.join(kurs['pomocnicy'])}"
+        godzina = kurs["godzina"]
+        kier = kurs["kierownik"] or ""
+        pomocnicy = kurs["pomocnicy"]
+
+        podglad = ""
+        if godzina:
+            podglad += f"   {godzina}"
+        if kier:
+            podglad += f"   {kier}"
+        if pomocnicy:
+            podglad += " + " + ", ".join(pomocnicy)
 
         expanded = True if idx == len(st.session_state.kursy) - 1 else False
-        with st.expander(opis, expanded=expanded):
-            godz = st.selectbox(f"Godzina kursu {idx+1}", options=[""] + godziny_domyslne, index=(godziny_domyslne.index(kurs["godzina"]) + 1) if kurs["godzina"] in godziny_domyslne else 0, key=f"godz_{idx}")
-            st.session_state.kursy[idx]["godzina"] = godz
+        with st.expander(f"Kurs {idx+1}{podglad}", expanded=expanded):
+            godzina_typ = st.radio(f"Wybierz opcję godziny dla kursu {idx+1}", ["Z listy", "Wpisz ręcznie"], key=f"typ_godz_{idx}")
 
-            kier = st.selectbox(f"Kierownik kursu {idx+1}", options=[""] + pracownicy, index=(pracownicy.index(kurs["kierownik"]) + 1) if kurs["kierownik"] in pracownicy else 0, key=f"kier_{idx}")
-            st.session_state.kursy[idx]["kierownik"] = kier if kier else None
+            if godzina_typ == "Z listy":
+                godz = st.selectbox(f"Godzina kursu {idx+1}", options=[""] + godziny_domyslne, index=godziny_domyslne.index(kurs["godzina"]) + 1 if kurs["godzina"] in godziny_domyslne else 0, key=f"godz_{idx}")
+            else:
+                godz = st.text_input(f"Godzina kursu {idx+1}", value=kurs["godzina"], key=f"godz_input_{idx}")
 
-            pomocnicy = []
+            kier = st.selectbox(f"Kierownik kursu {idx+1}", options=[""] + pracownicy, index=pracownicy.index(kurs["kierownik"]) + 1 if kurs["kierownik"] in pracownicy else 0, key=f"kier_{idx}")
+
+            pomoc = []
             if kier:
                 mozliwi_pomocnicy = [p for p in pracownicy if p != kier]
-                pomocnicy = st.multiselect(f"Pomocnicy kursu {idx+1}", options=mozliwi_pomocnicy, default=[p for p in kurs["pomocnicy"] if p in mozliwi_pomocnicy], key=f"pomoc_{idx}")
-                st.session_state.kursy[idx]["pomocnicy"] = pomocnicy
+                pomoc = st.multiselect(f"Pomocnicy kursu {idx+1}", options=mozliwi_pomocnicy, default=[p for p in kurs["pomocnicy"] if p in mozliwi_pomocnicy], key=f"pomoc_{idx}_fixed")
+
+            st.session_state.kursy[idx]["godzina"] = godz
+            st.session_state.kursy[idx]["kierownik"] = kier if kier else None
+            st.session_state.kursy[idx]["pomocnicy"] = pomoc
 
             if idx > 0 and idx == len(st.session_state.kursy) - 1:
                 if st.button(f"❌ Usuń kurs {idx+1}", key=f"usun_{idx}"):
