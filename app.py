@@ -65,6 +65,7 @@ def main():
     st.write("### Kursy / Zmiany")
 
     zajete_godziny = set()
+    niepoprawna_godzina = False
 
     for idx, kurs in enumerate(st.session_state.kursy):
         expanded = True if idx == len(st.session_state.kursy) - 1 else False
@@ -73,37 +74,40 @@ def main():
             poprzednia_godzina = st.session_state.kursy[idx - 1]["godzina"] if idx > 0 else None
 
             if godzina_typ == "Z listy":
-                dostepne_godziny = [g for g in godziny_domyslne if g not in zajete_godziny and (idx == 0 or not poprzednia_godzina or g > poprzednia_godzina)]
-                godz = st.selectbox(f"Godzina kursu {idx+1}", options=[""] + dostepne_godziny, index=dostepne_godziny.index(kurs["godzina"]) + 1 if kurs["godzina"] in dostepne_godziny else 0, key=f"godz_{idx}")
+                dostepne_godziny = [g for g in godziny_domyslne if g not in zajete_godziny]
+                wybrana_godzina = st.selectbox(f"Godzina kursu {idx+1}", options=[""] + dostepne_godziny, key=f"godz_{idx}")
+                if idx > 0 and poprzednia_godzina and wybrana_godzina and wybrana_godzina <= poprzednia_godzina:
+                    st.error("Godzina musi być późniejsza niż w poprzednim kursie.")
+                    niepoprawna_godzina = True
+                    wybrana_godzina = ""
             else:
-                godz = st.text_input(f"Godzina kursu {idx+1}", value=kurs["godzina"], key=f"godz_input_{idx}")
-                if godz in zajete_godziny:
+                wybrana_godzina = st.text_input(f"Godzina kursu {idx+1}", value=kurs["godzina"], key=f"godz_input_{idx}")
+                if wybrana_godzina in zajete_godziny:
                     st.warning("Ta godzina została już wybrana.")
-                    godz = ""
-                elif idx > 0 and poprzednia_godzina and godz <= poprzednia_godzina:
+                    wybrana_godzina = ""
+                elif idx > 0 and poprzednia_godzina and wybrana_godzina <= poprzednia_godzina:
                     st.warning("Godzina musi być późniejsza niż w poprzednim kursie.")
-                    godz = ""
+                    wybrana_godzina = ""
 
             kier = st.selectbox(f"Kierownik kursu {idx+1}", options=[""] + pracownicy, index=pracownicy.index(kurs["kierownik"]) + 1 if kurs["kierownik"] in pracownicy else 0, key=f"kier_{idx}")
 
             mozliwi_pomocnicy = [p for p in pracownicy if p != kier]
-            default_pomocnicy = [p for p in kurs["pomocnicy"] if p in mozliwi_pomocnicy]
-            pomoc = st.multiselect(f"Pomocnicy kursu {idx+1}", options=mozliwi_pomocnicy, default=default_pomocnicy, key=f"pomoc_{idx}_fixed")
+            pomoc = st.multiselect(f"Pomocnicy kursu {idx+1}", options=mozliwi_pomocnicy, default=[p for p in kurs["pomocnicy"] if p in mozliwi_pomocnicy], key=f"pomoc_{idx}_fixed")
 
-            st.session_state.kursy[idx]["godzina"] = godz
+            st.session_state.kursy[idx]["godzina"] = wybrana_godzina
             st.session_state.kursy[idx]["kierownik"] = kier if kier else None
             st.session_state.kursy[idx]["pomocnicy"] = pomoc
+
+            if wybrana_godzina:
+                zajete_godziny.add(wybrana_godzina)
 
             if idx > 0 and idx == len(st.session_state.kursy) - 1:
                 if st.button(f"❌ Usuń kurs {idx+1}", key=f"usun_{idx}"):
                     usun_kurs(idx)
                     st.experimental_rerun()
 
-        if kurs["godzina"]:
-            zajete_godziny.add(kurs["godzina"])
-
     ostatni_kurs = st.session_state.kursy[-1]
-    if ostatni_kurs["godzina"] and ostatni_kurs["kierownik"]:
+    if ostatni_kurs["godzina"] and ostatni_kurs["kierownik"] and not niepoprawna_godzina:
         st.button("➕ Dodaj kolejny kurs", on_click=dodaj_kurs)
 
     if st.button("🎨 Generuj grafik"):
