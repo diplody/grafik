@@ -78,12 +78,14 @@ def main():
             st.session_state.kursy[idx]["kierownik"] = kier if kier else None
             st.session_state.kursy[idx]["pomocnicy"] = pomoc
 
-            if idx == len(st.session_state.kursy) - 1 and len(st.session_state.kursy) > 1:
+            if idx > 0 and idx == len(st.session_state.kursy) - 1:
                 if st.button(f"❌ Usuń kurs {idx+1}", key=f"usun_{idx}"):
                     usun_kurs(idx)
                     st.experimental_rerun()
 
-    st.button("➕ Dodaj kolejny kurs", on_click=dodaj_kurs)
+    ostatni_kurs = st.session_state.kursy[-1]
+    if ostatni_kurs["godzina"] and ostatni_kurs["kierownik"]:
+        st.button("➕ Dodaj kolejny kurs", on_click=dodaj_kurs)
 
     if st.button("🎨 Generuj grafik"):
         kursy_do_wykresu = [k for k in st.session_state.kursy if k["godzina"] and k["kierownik"]]
@@ -98,5 +100,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
