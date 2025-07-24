@@ -7,7 +7,7 @@ import io
 pracownicy = ["Michał", "Gosia", "Dawid", "Damian", "Kasia", "Ola", "Aurelia", "Oskar", "Olaf"]
 
 def create_schedule_image(dzien, kursy):
-    dni_polskie = ["poniedziałek", "wtorek", "środa", "czwartek", "piątek", "sobota", "niedziela"]
+    dni_polskie = ["poniedziałek", "wtorek", "środa", "czwartek", "piątek", "sobotę", "niedzielę"]
     dzien_obj = datetime.strptime(dzien, "%Y-%m-%d")
     dzien_tygodnia = dni_polskie[dzien_obj.weekday()]
     dzien_formatted = dzien_obj.strftime('%d.%m')
@@ -23,8 +23,8 @@ def create_schedule_image(dzien, kursy):
     
     try:
         # Arial może nie mieć polskich znaków, dlatego lepiej DejaVuSans
-        font_title = ImageFont.truetype("DejaVuSans.ttf", 48)
-        font_header = ImageFont.truetype("DejaVuSans.ttf", 36)
+        font_title = ImageFont.truetype("DejaVuSans.ttf", 46)
+        font_header = ImageFont.truetype("DejaVuSans.ttf", 34)
         font = ImageFont.truetype("DejaVuSans.ttf", 28)
     except:
         # fallback do domyślnej, ale może brakować polskich znaków
