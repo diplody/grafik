@@ -16,7 +16,7 @@ def create_schedule_image(dzien, kursy):
     szerokosc = 800
     if any(len(k["pomocnicy"]) >= 3 for k in kursy):
         szerokosc += 100
-    wysokosc = 160 + 60 * len(kursy)
+    wysokosc = 160 + 60 * len(kursy) + 60
 
     img = Image.new('RGB', (szerokosc, wysokosc), color='#f9f9f9')
     draw = ImageDraw.Draw(img)
