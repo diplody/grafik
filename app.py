@@ -37,82 +37,74 @@ def main():
 
     zajete_godziny = set()
 
-    for idx, kurs in enumerate(st.session_state.kursy):
-        expanded = True if idx == len(st.session_state.kursy) - 1 else False
-        with st.expander(f"Kurs {idx+1}   {kurs['godzina']}   {kurs['kierownik'] or '-'} + {', '.join(kurs['pomocnicy']) if kurs['pomocnicy'] else '-'}", expanded=expanded):
-            godzina_typ = st.radio(f"Wybierz opcję godziny dla kursu {idx+1}", ["Z listy", "Wpisz ręcznie"], key=f"typ_godz_{idx}")
+    # ... reszta kodu bez zmian ...
 
-            if godzina_typ == "Z listy":
-                dostepne_godziny = [g for g in godziny_domyslne if g not in zajete_godziny]
-                godz = st.selectbox(f"Godzina kursu {idx+1}", options=[""] + dostepne_godziny,
-                                   index=dostepne_godziny.index(kurs["godzina"]) + 1 if kurs["godzina"] in dostepne_godziny else 0,
-                                   key=f"godz_{idx}")
-            else:
-                godz = st.text_input(f"Godzina kursu {idx+1}", value=kurs["godzina"], key=f"godz_input_{idx}")
+for idx, kurs in enumerate(st.session_state.kursy):
+    expanded = True if idx == len(st.session_state.kursy) - 1 else False
+    with st.expander(f"Kurs {idx+1}   {kurs['godzina']}   {kurs['kierownik'] or '-'} + {', '.join(kurs['pomocnicy']) if kurs['pomocnicy'] else '-'}", expanded=expanded):
+        godzina_typ = st.radio(f"Wybierz opcję godziny dla kursu {idx+1}", ["Z listy", "Wpisz ręcznie"], key=f"typ_godz_{idx}")
 
-            kier = st.selectbox(f"Kierownik kursu {idx+1}", options=[""] + pracownicy,
-                               index=pracownicy.index(kurs["kierownik"]) + 1 if kurs["kierownik"] in pracownicy else 0,
-                               key=f"kier_{idx}")
+        if godzina_typ == "Z listy":
+            dostepne_godziny = [g for g in godziny_domyslne if g not in zajete_godziny]
+            godz = st.selectbox(f"Godzina kursu {idx+1}", options=[""] + dostepne_godziny,
+                               index=dostepne_godziny.index(kurs["godzina"]) + 1 if kurs["godzina"] in dostepne_godziny else 0,
+                               key=f"godz_{idx}")
+        else:
+            godz = st.text_input(f"Godzina kursu {idx+1}", value=kurs["godzina"], key=f"godz_input_{idx}")
 
-            mozliwi_pomocnicy = pracownicy.copy()  # Pokaż wszystkich, nie filtruj
+        kier = st.selectbox(f"Kierownik kursu {idx+1}", options=[""] + pracownicy,
+                           index=pracownicy.index(kurs["kierownik"]) + 1 if kurs["kierownik"] in pracownicy else 0,
+                           key=f"kier_{idx}")
 
-            # Pokazujemy wszystkie, ale jeśli pomocnik jest już wybrany w tym kursie, to checkbox jest nieaktywny
-            # Jednak żeby nie usuwać z listy, tylko zablokować ponowne wybranie i pokazać efekt "mrugnięcia"
-            wybrane = kurs["pomocnicy"]
+        st.session_state.kursy[idx]["godzina"] = godz
+        st.session_state.kursy[idx]["kierownik"] = kier if kier else None
+
+        if kier:
+            # Lista pomocników bez kierownika
+            mozliwi_pomocnicy = [p for p in pracownicy if p != kier]
+
+            wybrane_pomocnicy = kurs["pomocnicy"]
 
             def render_multiselect_with_block(idx, options, selected):
                 selected_set = set(selected)
-                # Tu zapamiętujemy, czy ostatnio było próba wybrania duplikatu
                 key_invalid = f"pomocnik_invalid_{idx}"
 
-                # Render checkboxy ręcznie, żeby mieć kontrolę
                 nowe_wybrane = []
                 for p in options:
                     zaznaczony = p in selected_set
-                    disabled = False
-                    # Pomocnik nie może się wybrać dwa razy - więc checkbox jest zawsze aktywny, ale jeśli kliknie się duplikat to "mrugnie"
-                    # Tu nie blokujemy checkboxa, ale kontrolujemy wybór po kliknięciu
-                    # W streamlit checkbox jest stanowy, więc musimy symulować to inaczej - uprościmy to:
-                    # Po prostu pokazujemy checkbox i wykrywamy zmianę wyboru
-
                     checked = st.checkbox(p, value=zaznaczony, key=f"pomocnik_{idx}_{p}")
 
                     if checked:
                         if p in nowe_wybrane:
-                            # Próba ponownego dodania - mrugamy i ignorujemy (nie dodajemy)
                             if key_invalid not in st.session_state or not st.session_state[key_invalid]:
                                 st.session_state[key_invalid] = True
-                                # animacja mrugnięcia to uproszczona zmiana tekstu
                                 st.warning(f"Pomocnik {p} jest już wybrany w tym kursie!", icon="⚠️")
-                                # Nie dodajemy ponownie
                         else:
                             nowe_wybrane.append(p)
                     else:
-                        # jeśli checkbox odznaczony, usuwamy z listy
                         if p in nowe_wybrane:
                             nowe_wybrane.remove(p)
 
-                # Resetujemy flagę invalid, aby mrugnięcie było tylko chwilowe
                 if key_invalid in st.session_state and st.session_state[key_invalid]:
-                    # Ustaw reset na następny rerun
-                    time.sleep(0.1)
                     st.session_state[key_invalid] = False
 
                 return nowe_wybrane
 
-            pomoc = render_multiselect_with_block(idx, mozliwi_pomocnicy, wybrane)
-
-            st.session_state.kursy[idx]["godzina"] = godz
-            st.session_state.kursy[idx]["kierownik"] = kier if kier else None
+            pomoc = render_multiselect_with_block(idx, mozliwi_pomocnicy, wybrane_pomocnicy)
             st.session_state.kursy[idx]["pomocnicy"] = pomoc
+        else:
+            st.session_state.kursy[idx]["pomocnicy"] = []
 
-            if godz:
-                zajete_godziny.add(godz)
+        if godz:
+            zajete_godziny.add(godz)
 
-            if idx > 0 and idx == len(st.session_state.kursy) - 1:
-                if st.button(f"❌ Usuń kurs {idx+1}", key=f"usun_{idx}"):
-                    usun_kurs(idx)
-                    st.experimental_rerun()
+        if idx > 0 and idx == len(st.session_state.kursy) - 1:
+            if st.button(f"❌ Usuń kurs {idx+1}", key=f"usun_{idx}"):
+                usun_kurs(idx)
+                st.experimental_rerun()
+
+# ... reszta kodu bez zmian ...
+
 
     ostatni_kurs = st.session_state.kursy[-1]
     if ostatni_kurs["godzina"] and ostatni_kurs["kierownik"]:
