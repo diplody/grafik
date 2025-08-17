@@ -7,7 +7,7 @@ import io
 pracownicy = ["Michał", "Gosia", "Dawid", "Damian", "Kasia", "Ola", "Aurelia", "Oskar", "Olaf"]
 
 def create_schedule_image(dzien, kursy):
-    dni_polskie = ["poniedziałek", "wtorek", "środa", "czwartek", "piątek", "sobotę", "niedzielę"]
+    dni_polskie = ["poniedziałek", "wtorek", "środę", "czwartek", "piątek", "sobotę", "niedzielę"]
     dzien_obj = datetime.strptime(dzien, "%Y-%m-%d")
     dzien_tygodnia = dni_polskie[dzien_obj.weekday()]
     dzien_formatted = dzien_obj.strftime('%d.%m')
@@ -72,7 +72,7 @@ def main():
 
     dzien_tyg = datetime.strptime(str(dzien), "%Y-%m-%d").weekday()
     if dzien_tyg < 5:
-        godziny_domyslne = ["9:30", "12:00", "15:20", "17:30"]
+        godziny_domyslne = ["9:30", "12:00", "14:15", "15:20", "17:30"]
     else:
         godziny_domyslne = ["9:15", "11:25", "13:35", "15:45", "17:30"]
 
