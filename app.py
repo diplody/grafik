@@ -75,7 +75,7 @@ def main():
     dzien = st.date_input("Wybierz dzień:", value=date.today())
 
     dzien_tyg = datetime.strptime(str(dzien), "%Y-%m-%d").weekday()
-    if dzien_tyg < 5:
+    if dzien_tyg < 4:
         godziny_domyslne = ["16:00"]
     else:
         godziny_domyslne = ["9:45", "12:00", "14:15", "16:30", "18:30"]
