@@ -23,9 +23,9 @@ def create_schedule_image(dzien, kursy):
     
     try:
         # Arial może nie mieć polskich znaków, dlatego lepiej DejaVuSans
-        font_title = ImageFont.truetype("DejaVuSans.ttf", 46)
-        font_header = ImageFont.truetype("DejaVuSans.ttf", 34)
-        font = ImageFont.truetype("DejaVuSans.ttf", 28)
+        font_title = ImageFont.truetype("Roboto.ttf", 46)
+        font_header = ImageFont.truetype("Roboto.ttf", 34)
+        font = ImageFont.truetype("Roboto.ttf", 28)
     except:
         # fallback do domyślnej, ale może brakować polskich znaków
         font_title = ImageFont.load_default()
