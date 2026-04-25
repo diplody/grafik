@@ -76,9 +76,9 @@ def main():
 
     dzien_tyg = datetime.strptime(str(dzien), "%Y-%m-%d").weekday()
     if dzien_tyg < 5:
-        godziny_domyslne = ["11:00", "13:30", "16:00"]
+        godziny_domyslne = ["16:00"]
     else:
-        godziny_domyslne = ["9:30", "11:40", "13:50", "16:00"]
+        godziny_domyslne = ["9:45", "12:00", "14:15", "16:30", "18:30"]
 
     if "kursy" not in st.session_state or st.session_state.get("last_date") != dzien:
         st.session_state.kursy = [{"godzina": "", "kierownik": None, "pomocnicy": []}]
