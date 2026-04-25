@@ -2,6 +2,10 @@ import streamlit as st
 from datetime import date, datetime
 from PIL import Image, ImageDraw, ImageFont
 import io
+import os
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+font_path = os.path.join(BASE_DIR, "fonts", "Roboto-Regular.ttf")
 
 # Lista pracowników
 pracownicy = ["Michał", "Gosia", "Dawid", "Damian", "Kasia", "Ola", "Aurelia", "Oskar", "Olaf"]
@@ -23,9 +27,9 @@ def create_schedule_image(dzien, kursy):
     
     try:
         # Arial może nie mieć polskich znaków, dlatego lepiej DejaVuSans
-        font_title = ImageFont.truetype("Roboto-Regular.ttf", 46)
-        font_header = ImageFont.truetype("Roboto-Regular.ttf", 34)
-        font = ImageFont.truetype("Roboto-Regular.ttf", 28)
+        font_title = ImageFont.truetype(font_path, 46)
+        font_header = ImageFont.truetype(font_path, 34)
+        font = ImageFont.truetype(font_path, 28)
     except:
         # fallback do domyślnej, ale może brakować polskich znaków
         font_title = ImageFont.load_default()
