@@ -78,7 +78,7 @@ def main():
     if dzien_tyg < 4:
         godziny_domyslne = ["16:00"]
     else:
-        godziny_domyslne = ["9:45", "12:00", "14:15", "16:30", "18:30"]
+        godziny_domyslne = ["9:15", "11:25", "13:35", "15:45", "17:50", "19:20"]
 
     if "kursy" not in st.session_state or st.session_state.get("last_date") != dzien:
         st.session_state.kursy = [{"godzina": "", "kierownik": None, "pomocnicy": []}]
