@@ -96,10 +96,12 @@ def create_schedule_image(dzien, kursy):
 
         # Kolumna Trasa=1 – kolorowa litera
         if trasa:
+            PELNE_NAZWY = {"D": "Długa", "Ś": "Średnia", "K": "Krótka"}
             kolor = KOLORY_TRASY.get(trasa, 'black')
+            tekst_trasy = PELNE_NAZWY.get(trasa, trasa)
             x_center = col_starts[1] + col_widths[1] // 2
-            w = draw.textlength(trasa, font=font_trasa)
-            draw.text((x_center - w / 2, y + 1), trasa, fill=kolor, font=font_trasa)
+            w = draw.textlength(tekst_trasy, font=font_trasa)
+            draw.text((x_center - w / 2, y + 1), tekst_trasy, fill=kolor, font=font_trasa)
 
         y += row_height
 
