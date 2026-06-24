@@ -156,10 +156,10 @@ def main():
 
         podglad = ""
         if kurs["godzina"]:   podglad += f"   {kurs['godzina']}"
+        if dlugosc_trasy:     podglad += f"   [{dlugosc_trasy}]"
         if kurs["kierownik"]: podglad += f"   {kurs['kierownik']}"
         if kurs["pomocnicy"]: podglad += " + " + ", ".join(kurs["pomocnicy"])
-        if dlugosc_trasy:     podglad += f"   [{dlugosc_trasy}]"
-
+        
         with st.expander(f"Kurs {idx+1}{podglad}", expanded=(idx == len(st.session_state.kursy) - 1)):
             godzina_typ = st.radio(
                 f"Wybierz opcję godziny dla kursu {idx+1}",
