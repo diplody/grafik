@@ -156,7 +156,7 @@ def main():
 
         podglad = ""
         if kurs["godzina"]:   podglad += f"   {kurs['godzina']}"
-        if dlugosc_trasy:     podglad += f"   [{dlugosc_trasy}]"
+        if dlugosc_trasy:     podglad += f"   [{NAZWY_TRASY[dlugosc_trasy]}]"
         if kurs["kierownik"]: podglad += f"   {kurs['kierownik']}"
         if kurs["pomocnicy"]: podglad += " + " + ", ".join(kurs["pomocnicy"])
         
