@@ -55,9 +55,9 @@ def create_schedule_image(dzien, kursy):
 
     base = 1000
     col_widths = [
-        base // 4,       # Godzina   (1/4)
+        base // 4, # Godzina   (1/4)
         200,       # Trasa     (1/4)
-        base // 4,       # Kierownik (1/4)
+        base // 4, # Kierownik (1/4)
         300,       # Pomocnicy (1/4)
     ]
     max_pomocnicy = max(len(k["pomocnicy"]) for k in kursy)
@@ -115,7 +115,7 @@ def create_schedule_image(dzien, kursy):
         pomoc = ", ".join(kurs["pomocnicy"]) if kurs["pomocnicy"] else "-"
         trasa = kurs.get("dlugosc_trasy", "")
 
-        for col, val in zip([1, 3, 2], [godz, kier, pomoc]):
+        for col, val in zip([0, 2, 3], [godz, kier, pomoc]):
             w = draw.textlength(val, font=font)
             draw.text((cx(col) - w / 2, y), val, fill='black', font=font)
 
@@ -123,7 +123,7 @@ def create_schedule_image(dzien, kursy):
             tekst = NAZWY_TRASY.get(trasa, trasa)
             kolor = KOLORY_TRASY.get(trasa, 'black')
             w = draw.textlength(tekst, font=font)
-            draw.text((cx(0) - w / 2, y + 1), tekst, fill=kolor, font=font)
+            draw.text((cx(1) - w / 2, y + 1), tekst, fill=kolor, font=font)
 
         y += row_height + 10
 
