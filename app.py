@@ -11,29 +11,31 @@ font_path = os.path.join(BASE_DIR, "fonts", "Roboto-Regular.ttf")
 
 pracownicy = ["Michał", "Gosia", "Dawid", "Damian", "Kasia", "Ola", "Aurelia", "Oskar", "Olaf"]
 
-KOLORY_TRASY  = {"D": "#CC0000", "Ś": "#0055CC", "K": "#007700"}
-NAZWY_TRASY   = {"D": "Długa", "Ś": "Średnia", "K": "Krótka"}
-ETYKIETY_TRASY = {"D": "długa", "Ś": "średnia", "K": "krótka"}
-
-# Jedno miejsce: typ dnia → lista kursów z godziną i trasą
+KOLORY_TRASY = {"D": "#CC0000", "Ś": "#0055CC", "K": "#007700"}
+NAZWY_TRASY = {"D": "Długa", "Ś": "Średnia", "K": "Krótka"}
 ROZKLAD = {
-    "R": [  # Roboczy (pon–czw)
-        {"godzina": "16:00", "trasa": "D"},
+    "R": [  # Roboczy (pon–pt)
+        {"godzina": "9:30", "trasa": "D"},
+        {"godzina": "11:45", "trasa": "D"},
+        {"godzina": "14:10", "trasa": "K"},
+        {"godzina": "15:20", "trasa": "D"},
+        {"godzina": "17:30", "trasa": "D"},
+        {"godzina": "19:30", "trasa": "K"},
     ],
-    "W": [  # Weekend (pt–nd)
-        {"godzina": "9:15",  "trasa": "D"},
-        {"godzina": "11:25", "trasa": "K"},
-        {"godzina": "13:35", "trasa": "Ś"},
-        {"godzina": "15:45", "trasa": "D"},
-        {"godzina": "17:50", "trasa": "K"},
-        {"godzina": "19:20", "trasa": "Ś"},
+    "W": [  # Weekend (sob–nd)
+        {"godzina": "9:10", "trasa": "D"},
+        {"godzina": "11:20", "trasa": "D"},
+        {"godzina": "13:30", "trasa": "Ś"},
+        {"godzina": "15:00", "trasa": "K"},
+        {"godzina": "15:50", "trasa": "D"},
+        {"godzina": "17:50", "trasa": "D"},
     ],
 }
 
 # ── Helpery ─────────────────────────────────────────────────────────────────
 
 def typ_dnia(dzien):
-    return "R" if dzien.weekday() < 4 else "W"
+    return "R" if dzien.weekday() <= 4 else "W"
 
 def godziny_dla_dnia(dzien):
     return [k["godzina"] for k in ROZKLAD[typ_dnia(dzien)]]
@@ -51,33 +53,33 @@ def create_schedule_image(dzien, kursy):
     dzien_obj = datetime.strptime(dzien, "%Y-%m-%d")
     tytul = f"Grafik na {dni_polskie[dzien_obj.weekday()]} {dzien_obj.strftime('%d.%m')}"
 
-    szerokosc = 900
+    base = 1000
+    col_widths = [
+        base // 5,       # Godzina   (1/5)
+        base // 5,       # Trasa     (1/5)
+        base // 5,       # Kierownik (1/5)
+        base * 2 // 5,   # Pomocnicy (2/5)
+    ]
     if any(len(k["pomocnicy"]) >= 3 for k in kursy):
-        szerokosc += 100
+        col_widths[3] += 100
+
+    szerokosc = sum(col_widths)
     wysokosc = 160 + 60 * len(kursy) + 60
 
-    img  = Image.new('RGB', (szerokosc, wysokosc), color='#f9f9f9')
+    img = Image.new('RGB', (szerokosc, wysokosc), color='#f9f9f9')
     draw = ImageDraw.Draw(img)
 
     try:
         font_title  = ImageFont.truetype(font_path, 46)
-        font_header = ImageFont.truetype(font_path, 34)
-        font        = ImageFont.truetype(font_path, 31)
-        font_trasa  = ImageFont.truetype(font_path, 35)
+        font_header = ImageFont.truetype(font_path, 38)
+        font        = ImageFont.truetype(font_path, 32)
     except:
-        font_title = font_header = font = font_trasa = ImageFont.load_default()
+        font_title = font_header = font = ImageFont.load_default()
 
     # Tytuł
     tw = draw.textlength(tytul, font=font_title)
     draw.text(((szerokosc - tw) / 2, 20), tytul, fill='black', font=font_title)
 
-    # Kolumny: Godzina 1/5 | Trasa 1/5 | Kierownik 3/10 | Pomocnicy 3/10
-    col_widths = [
-        szerokosc // 5,
-        szerokosc // 5,
-        szerokosc * 3 // 10,
-        szerokosc * 3 // 10,
-    ]
     col_starts = []
     x = 0
     for w in col_widths:
@@ -120,8 +122,8 @@ def create_schedule_image(dzien, kursy):
         if trasa:
             tekst = NAZWY_TRASY.get(trasa, trasa)
             kolor = KOLORY_TRASY.get(trasa, 'black')
-            w = draw.textlength(tekst, font=font_trasa)
-            draw.text((cx(1) - w / 2, y + 1), tekst, fill=kolor, font=font_trasa)
+            w = draw.textlength(tekst, font=font)
+            draw.text((cx(1) - w / 2, y + 1), tekst, fill=kolor, font=font)
 
         y += row_height + 10
 
@@ -174,7 +176,7 @@ def main():
                 )
                 trasa = trasa_dla_godziny(dzien, godz)
                 if trasa:
-                    st.caption(f"Długość trasy: **{trasa}** ({ETYKIETY_TRASY[trasa]})")
+                    st.caption(f"Długość trasy: **{trasa}** ({NAZWY_TRASY[trasa].lower()})")
             else:
                 godz = st.text_input(
                     f"Godzina kursu {idx+1}",
