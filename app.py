@@ -53,7 +53,7 @@ def create_schedule_image(dzien, kursy):
     dzien_obj = datetime.strptime(dzien, "%Y-%m-%d")
     tytul = f"Grafik na {dni_polskie[dzien_obj.weekday()]} {dzien_obj.strftime('%d.%m')}"
 
-    base = 1000
+    base = 900
     col_widths = [
         base // 5,       # Godzina   (1/5)
         base // 5,       # Trasa     (1/5)
