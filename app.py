@@ -63,7 +63,7 @@ def create_schedule_image(dzien, kursy):
     y = 100
     row_height = 60
 
-    headers = ["Godzina", "Kierownik", "Pomocnicy", "Trasa"]
+    headers = ["Godzina", "Trasa", "Kierownik", "Pomocnicy"]
     for i, header in enumerate(headers):
         x_center = i * col_width + col_width // 2
         w = draw.textlength(header, font=font_header)
@@ -81,7 +81,7 @@ def create_schedule_image(dzien, kursy):
 
         # Kolumny tekstowe (czarny)
         values = [godz, kier, pomoc]
-        for i, val in enumerate(values):
+        for i, val in zip([0, 2, 3], values):
             x_center = i * col_width + col_width // 2
             w = draw.textlength(val, font=font)
             draw.text((x_center - w / 2, y), val, fill='black', font=font)
@@ -89,7 +89,7 @@ def create_schedule_image(dzien, kursy):
         # Kolumna Trasa – kolorowa litera
         if trasa:
             kolor = KOLORY_TRASY.get(trasa, 'black')
-            x_center = 3 * col_width + col_width // 2
+            x_center = 1 * col_width + col_width // 2
             w = draw.textlength(trasa, font=font_trasa)
             draw.text((x_center - w / 2, y + 1), trasa, fill=kolor, font=font_trasa)
 
