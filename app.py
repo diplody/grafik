@@ -19,13 +19,18 @@ KOLORY_TRASY = {
 
 # Przypisanie długości trasy do godzin z listy (zmień wg potrzeb)
 TRASA_DLA_GODZINY = {
-    "9:15":  "D",
-    "11:25": "K",
-    "13:35": "Ś",
-    "15:45": "D",
-    "17:50": "K",
-    "19:20": "Ś",
-    "16:00": "D",
+    "9:10": "D",
+    "9:30": "D",
+    "11:20": "D",
+    "11:45": "D",
+    "13:30": "Ś",
+    "14:10": "K",
+    "15:00": "K",
+    "15:20": "D",
+    "15:50": "D",
+    "17:30": "D",
+    "17:50": "D",
+    "19:30": "K",
 }
 
 def create_schedule_image(dzien, kursy):
@@ -45,8 +50,8 @@ def create_schedule_image(dzien, kursy):
 
     try:
         font_title = ImageFont.truetype(font_path, 46)
-        font_header = ImageFont.truetype(font_path, 34)
-        font = ImageFont.truetype(font_path, 28)
+        font_header = ImageFont.truetype(font_path, 38)
+        font = ImageFont.truetype(font_path, 32)
         font_trasa = ImageFont.truetype(font_path, 32)
     except:
         font_title = ImageFont.load_default()
