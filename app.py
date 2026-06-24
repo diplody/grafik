@@ -10,6 +10,24 @@ font_path = os.path.join(BASE_DIR, "fonts", "Roboto-Regular.ttf")
 # Lista pracowników
 pracownicy = ["Michał", "Gosia", "Dawid", "Damian", "Kasia", "Ola", "Aurelia", "Oskar", "Olaf"]
 
+# Kolory dla długości trasy
+KOLORY_TRASY = {
+    "D": "#CC0000",   # czerwony
+    "Ś": "#0055CC",   # niebieski
+    "K": "#007700",   # zielony
+}
+
+# Przypisanie długości trasy do godzin z listy (zmień wg potrzeb)
+TRASA_DLA_GODZINY = {
+    "9:15":  "D",
+    "11:25": "K",
+    "13:35": "Ś",
+    "15:45": "D",
+    "17:50": "K",
+    "19:20": "Ś",
+    "16:00": "D",
+}
+
 def create_schedule_image(dzien, kursy):
     dni_polskie = ["poniedziałek", "wtorek", "środę", "czwartek", "piątek", "sobotę", "niedzielę"]
     dzien_obj = datetime.strptime(dzien, "%Y-%m-%d")
@@ -17,36 +35,46 @@ def create_schedule_image(dzien, kursy):
     dzien_formatted = dzien_obj.strftime('%d.%m')
     tytul = f"Grafik na {dzien_tygodnia} {dzien_formatted}"
 
-    szerokosc = 800
+    szerokosc = 900
     if any(len(k["pomocnicy"]) >= 3 for k in kursy):
         szerokosc += 100
     wysokosc = 160 + 60 * len(kursy) + 60
 
     img = Image.new('RGB', (szerokosc, wysokosc), color='#f9f9f9')
     draw = ImageDraw.Draw(img)
-    
+
     try:
-        # Arial może nie mieć polskich znaków, dlatego lepiej DejaVuSans
         font_title = ImageFont.truetype(font_path, 46)
         font_header = ImageFont.truetype(font_path, 34)
         font = ImageFont.truetype(font_path, 28)
+        font_trasa = ImageFont.truetype(font_path, 32)
     except:
-        # fallback do domyślnej, ale może brakować polskich znaków
         font_title = ImageFont.load_default()
         font_header = ImageFont.load_default()
         font = ImageFont.load_default()
+        font_trasa = ImageFont.load_default()
 
     # Nagłówek
     title_width = draw.textlength(tytul, font=font_title)
     draw.text(((szerokosc - title_width) / 2, 20), tytul, fill='black', font=font_title)
 
-    col_width = szerokosc // 3
+    # Proporcje kolumn: Godzina | Kierownik | Pomocnicy | Trasa
+    col_ratios = [0.15, 0.23, 0.50, 0.12]
+    col_widths = [int(szerokosc * r) for r in col_ratios]
+    # Wyrównaj do szerokości obrazka (reszta do Pomocnicy)
+    col_widths[2] = szerokosc - col_widths[0] - col_widths[1] - col_widths[3]
+    col_starts = []
+    x = 0
+    for w in col_widths:
+        col_starts.append(x)
+        x += w
+
     y = 100
     row_height = 60
 
-    headers = ["Godzina", "Kierownik", "Pomocnicy"]
+    headers = ["Godzina", "Kierownik", "Pomocnicy", "Trasa"]
     for i, header in enumerate(headers):
-        x_center = (i * col_width) + (col_width // 2)
+        x_center = col_starts[i] + col_widths[i] // 2
         w = draw.textlength(header, font=font_header)
         draw.text((x_center - w / 2, y), header, fill='black', font=font_header)
 
@@ -58,12 +86,22 @@ def create_schedule_image(dzien, kursy):
         godz = kurs["godzina"]
         kier = kurs["kierownik"] or "-"
         pomoc = ", ".join(kurs["pomocnicy"]) if kurs["pomocnicy"] else "-"
+        trasa = kurs.get("dlugosc_trasy", "")
 
+        # Kolumny tekstowe (czarny)
         values = [godz, kier, pomoc]
         for i, val in enumerate(values):
-            x_center = (i * col_width) + (col_width // 2)
+            x_center = col_starts[i] + col_widths[i] // 2
             w = draw.textlength(val, font=font)
             draw.text((x_center - w / 2, y), val, fill='black', font=font)
+
+        # Kolumna Trasa – kolorowa litera
+        if trasa:
+            kolor = KOLORY_TRASY.get(trasa, 'black')
+            x_center = col_starts[3] + col_widths[3] // 2
+            w = draw.textlength(trasa, font=font_trasa)
+            draw.text((x_center - w / 2, y + 1), trasa, fill=kolor, font=font_trasa)
+
         y += row_height
 
     return img
@@ -81,11 +119,11 @@ def main():
         godziny_domyslne = ["9:15", "11:25", "13:35", "15:45", "17:50", "19:20"]
 
     if "kursy" not in st.session_state or st.session_state.get("last_date") != dzien:
-        st.session_state.kursy = [{"godzina": "", "kierownik": None, "pomocnicy": []}]
+        st.session_state.kursy = [{"godzina": "", "kierownik": None, "pomocnicy": [], "dlugosc_trasy": ""}]
         st.session_state.last_date = dzien
 
     def dodaj_kurs():
-        st.session_state.kursy.append({"godzina": "", "kierownik": None, "pomocnicy": []})
+        st.session_state.kursy.append({"godzina": "", "kierownik": None, "pomocnicy": [], "dlugosc_trasy": ""})
 
     def usun_kurs(idx):
         if len(st.session_state.kursy) > 1:
@@ -97,6 +135,7 @@ def main():
         godzina = kurs["godzina"]
         kier = kurs["kierownik"] or ""
         pomocnicy = kurs["pomocnicy"]
+        dlugosc_trasy = kurs.get("dlugosc_trasy", "")
 
         podglad = ""
         if godzina:
@@ -105,6 +144,8 @@ def main():
             podglad += f"   {kier}"
         if pomocnicy:
             podglad += " + " + ", ".join(pomocnicy)
+        if dlugosc_trasy:
+            podglad += f"   [{dlugosc_trasy}]"
 
         expanded = True if idx == len(st.session_state.kursy) - 1 else False
         with st.expander(f"Kurs {idx+1}{podglad}", expanded=expanded):
@@ -112,8 +153,21 @@ def main():
 
             if godzina_typ == "Z listy":
                 godz = st.selectbox(f"Godzina kursu {idx+1}", options=[""] + godziny_domyslne, index=godziny_domyslne.index(kurs["godzina"]) + 1 if kurs["godzina"] in godziny_domyslne else 0, key=f"godz_{idx}")
+                trasa = TRASA_DLA_GODZINY.get(godz, "")
+                if trasa:
+                    etykiety = {"D": "długa", "Ś": "średnia", "K": "krótka"}
+                    st.caption(f"Długość trasy: **{trasa}** ({etykiety[trasa]})")
             else:
                 godz = st.text_input(f"Godzina kursu {idx+1}", value=kurs["godzina"], key=f"godz_input_{idx}")
+                opcje_trasy = ["", "D", "Ś", "K"]
+                trasa_idx = opcje_trasy.index(dlugosc_trasy) if dlugosc_trasy in opcje_trasy else 0
+                trasa = st.selectbox(
+                    f"Długość trasy kursu {idx+1}",
+                    options=opcje_trasy,
+                    index=trasa_idx,
+                    format_func=lambda x: {"": "— brak —", "D": "D (długa)", "Ś": "Ś (średnia)", "K": "K (krótka)"}.get(x, x),
+                    key=f"trasa_{idx}"
+                )
 
             kier = st.selectbox(f"Kierownik kursu {idx+1}", options=[""] + pracownicy, index=pracownicy.index(kurs["kierownik"]) + 1 if kurs["kierownik"] in pracownicy else 0, key=f"kier_{idx}")
 
@@ -125,6 +179,7 @@ def main():
             st.session_state.kursy[idx]["godzina"] = godz
             st.session_state.kursy[idx]["kierownik"] = kier if kier else None
             st.session_state.kursy[idx]["pomocnicy"] = pomoc
+            st.session_state.kursy[idx]["dlugosc_trasy"] = trasa
 
             if idx > 0 and idx == len(st.session_state.kursy) - 1:
                 if st.button(f"❌ Usuń kurs {idx+1}", key=f"usun_{idx}"):
