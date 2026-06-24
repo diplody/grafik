@@ -85,6 +85,7 @@ def create_schedule_image(dzien, kursy):
 
     y += 40
     draw.line([(20, y), (szerokosc - 20, y)], fill='black')
+    y += row_height
 
     for kurs in kursy:
         y += 10
