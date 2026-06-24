@@ -55,13 +55,13 @@ def create_schedule_image(dzien, kursy):
 
     base = 1000
     col_widths = [
-        base // 4,       # Godzina   (1/5)
-        base // 4,       # Trasa     (1/5)
-        base // 4,       # Kierownik (1/5)
-        base // 4,       # Pomocnicy (2/5)
+        base // 4,       # Godzina   (1/4)
+        base // 4,       # Trasa     (1/4)
+        base // 4,       # Kierownik (1/4)
+        base // 4,       # Pomocnicy (1/4)
     ]
-    if any(len(k["pomocnicy"]) >= 3 for k in kursy):
-        col_widths[3] += 120
+    max_pomocnicy = max(len(k["pomocnicy"]) for k in kursy)
+    col_widths[3] += max(0, max_pomocnicy - 2) * 100
 
     szerokosc = sum(col_widths)
     wysokosc = 160 + 60 * len(kursy) + 60
