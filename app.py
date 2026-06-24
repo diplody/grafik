@@ -85,8 +85,11 @@ def create_schedule_image(dzien, kursy):
 
     y += 40
     draw.line([(20, y), (szerokosc - 20, y)], fill='black')
-    y += row_height
 
+    bbox = draw.textbbox((0, 0), "Ag", font=font)
+    font_height = bbox[3] - bbox[1]
+    y += (60 - font_height)
+    
     for kurs in kursy:
         y += 10
         godz = kurs["godzina"]
