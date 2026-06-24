@@ -58,14 +58,23 @@ def create_schedule_image(dzien, kursy):
     title_width = draw.textlength(tytul, font=font_title)
     draw.text(((szerokosc - title_width) / 2, 20), tytul, fill='black', font=font_title)
 
-    col_width = szerokosc // 4
+    # Godzina i Trasa: łącznie 2/5, Kierownik i Pomocnicy: łącznie 3/5
+    col_widths = [
+        szerokosc // 5,       # Godzina   (1/5)
+        szerokosc // 5,       # Trasa     (1/5)
+        szerokosc * 3 // 10,  # Kierownik (3/10)
+        szerokosc * 3 // 10,  # Pomocnicy (3/10)
+    ]
+    col_starts = [0]
+    for w in col_widths[:-1]:
+        col_starts.append(col_starts[-1] + w)
 
     y = 100
     row_height = 60
 
     headers = ["Godzina", "Trasa", "Kierownik", "Pomocnicy"]
     for i, header in enumerate(headers):
-        x_center = i * col_width + col_width // 2
+        x_center = col_starts[i] + col_widths[i] // 2
         w = draw.textlength(header, font=font_header)
         draw.text((x_center - w / 2, y), header, fill='black', font=font_header)
 
@@ -79,17 +88,16 @@ def create_schedule_image(dzien, kursy):
         pomoc = ", ".join(kurs["pomocnicy"]) if kurs["pomocnicy"] else "-"
         trasa = kurs.get("dlugosc_trasy", "")
 
-        # Kolumny tekstowe (czarny)
-        values = [godz, kier, pomoc]
-        for i, val in zip([0, 2, 3], values):
-            x_center = i * col_width + col_width // 2
+        # Kolumny tekstowe (czarny): Godzina=0, Kierownik=2, Pomocnicy=3
+        for i, val in zip([0, 2, 3], [godz, kier, pomoc]):
+            x_center = col_starts[i] + col_widths[i] // 2
             w = draw.textlength(val, font=font)
             draw.text((x_center - w / 2, y), val, fill='black', font=font)
 
-        # Kolumna Trasa – kolorowa litera
+        # Kolumna Trasa=1 – kolorowa litera
         if trasa:
             kolor = KOLORY_TRASY.get(trasa, 'black')
-            x_center = 1 * col_width + col_width // 2
+            x_center = col_starts[1] + col_widths[1] // 2
             w = draw.textlength(trasa, font=font_trasa)
             draw.text((x_center - w / 2, y + 1), trasa, fill=kolor, font=font_trasa)
 
