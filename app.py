@@ -53,15 +53,15 @@ def create_schedule_image(dzien, kursy):
     dzien_obj = datetime.strptime(dzien, "%Y-%m-%d")
     tytul = f"Grafik na {dni_polskie[dzien_obj.weekday()]} {dzien_obj.strftime('%d.%m')}"
 
-    base = 900
+    base = 1000
     col_widths = [
-        base // 5,       # Godzina   (1/5)
-        base // 5,       # Trasa     (1/5)
-        base // 5,       # Kierownik (1/5)
-        base * 2 // 5,   # Pomocnicy (2/5)
+        base // 4,       # Godzina   (1/5)
+        base // 4,       # Trasa     (1/5)
+        base // 4,       # Kierownik (1/5)
+        base // 4,       # Pomocnicy (2/5)
     ]
     if any(len(k["pomocnicy"]) >= 3 for k in kursy):
-        col_widths[3] += 100
+        col_widths[3] += 120
 
     szerokosc = sum(col_widths)
     wysokosc = 160 + 60 * len(kursy) + 60
