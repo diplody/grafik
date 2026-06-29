@@ -290,26 +290,24 @@ def main():
     if "img_bytes" in st.session_state:
         st.image(st.session_state.img_bytes)
 
-        col1, col2 = st.columns(2)
-        with col1:
-            st.download_button(
-                "⬇️ Pobierz grafik PNG",
-                data=st.session_state.img_bytes,
-                file_name=st.session_state.nazwa_grafiku,
-                mime="image/png"
-            )
-        with col2:
-            if st.button("📤 Wyślij grafik botem Telegram"):
-                with st.spinner("Wysyłanie..."):
-                    wyniki = wyslij_telegram(
-                        st.session_state.img_bytes,
-                        st.session_state.osoby_grafiku
-                    )
-                if "__error__" in wyniki:
-                    st.error(wyniki["__error__"])
-                else:
-                    for osoba, status in wyniki.items():
-                        st.write(f"{osoba}: {status}")
+        st.download_button(
+            "⬇️ Pobierz grafik PNG",
+            data=st.session_state.img_bytes,
+            file_name=st.session_state.nazwa_grafiku,
+            mime="image/png"
+        )
+        
+        if st.button("📤 Wyślij grafik botem Telegram"):
+            with st.spinner("Wysyłanie..."):
+                wyniki = wyslij_telegram(
+                    st.session_state.img_bytes,
+                    st.session_state.osoby_grafiku
+                )
+            if "__error__" in wyniki:
+                st.error(wyniki["__error__"])
+            else:
+                for osoba, status in wyniki.items():
+                    st.write(f"{osoba}: {status}")
 
 if __name__ == "__main__":
     main()
