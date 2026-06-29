@@ -3,27 +3,40 @@ from datetime import date, datetime
 from PIL import Image, ImageDraw, ImageFont
 import io
 import os
+import requests
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 font_path = os.path.join(BASE_DIR, "fonts", "Roboto-Regular.ttf")
 
 # ── Konfiguracja ────────────────────────────────────────────────────────────
 
-pracownicy = ["Michał", "Gosia", "Dawid", "Damian", "Kasia", "Ola", "Aurelia", "Oskar", "Olaf"]
+PRACOWNICY = {
+    "Michał":  1432598760,
+    "Gosia":   2387614509,
+    "Dawid":   3521478963,
+    "Damian":  6791832282,
+    "Kasia":   4198237645,
+    "Ola":     5763920184,
+    "Aurelia": 7629384510,
+    "Oskar":   8374651029,
+    "Olaf":    9012845673,
+}
+pracownicy = list(PRACOWNICY.keys())
 
 KOLORY_TRASY = {"D": "#CC0000", "Ś": "#0055CC", "K": "#007700"}
-NAZWY_TRASY = {"D": "Długa", "Ś": "Średnia", "K": "Krótka"}
+NAZWY_TRASY  = {"D": "Długa",   "Ś": "Średnia", "K": "Krótka"}
+
 ROZKLAD = {
-    "R": [  # Roboczy (pon–pt)
-        {"godzina": "9:30", "trasa": "D"},
+    "R": [
+        {"godzina": "9:30",  "trasa": "D"},
         {"godzina": "11:45", "trasa": "D"},
         {"godzina": "14:10", "trasa": "K"},
         {"godzina": "15:20", "trasa": "D"},
         {"godzina": "17:30", "trasa": "D"},
         {"godzina": "19:30", "trasa": "K"},
     ],
-    "W": [  # Weekend (sob–nd)
-        {"godzina": "9:10", "trasa": "D"},
+    "W": [
+        {"godzina": "9:10",  "trasa": "D"},
         {"godzina": "11:20", "trasa": "D"},
         {"godzina": "13:30", "trasa": "Ś"},
         {"godzina": "15:00", "trasa": "K"},
@@ -46,6 +59,36 @@ def trasa_dla_godziny(dzien, godzina):
             return k["trasa"]
     return ""
 
+def get_bot_token():
+    try:
+        return st.secrets["TELEGRAM_BOT_TOKEN"]
+    except:
+        return os.environ.get("TELEGRAM_BOT_TOKEN", "")
+
+def wyslij_telegram(img_bytes, osoby):
+    token = get_bot_token()
+    if not token:
+        return {"__error__": "Brak tokenu bota. Ustaw TELEGRAM_BOT_TOKEN w secrets lub zmiennych środowiskowych."}
+
+    url = f"https://api.telegram.org/bot{token}/sendPhoto"
+    wyniki = {}
+    for osoba in sorted(osoby):
+        chat_id = PRACOWNICY.get(osoba)
+        if not chat_id:
+            wyniki[osoba] = "❓ brak ID"
+            continue
+        try:
+            resp = requests.post(
+                url,
+                data={"chat_id": chat_id},
+                files={"photo": ("grafik.png", io.BytesIO(img_bytes), "image/png")},
+                timeout=10,
+            )
+            wyniki[osoba] = "✅ wysłano" if resp.json().get("ok") else f"❌ {resp.json().get('description', 'błąd')}"
+        except Exception as e:
+            wyniki[osoba] = f"❌ {e}"
+    return wyniki
+
 # ── Generowanie obrazka ──────────────────────────────────────────────────────
 
 def create_schedule_image(dzien, kursy):
@@ -55,18 +98,18 @@ def create_schedule_image(dzien, kursy):
 
     base = 1000
     col_widths = [
-        base // 4, # Godzina   (1/4)
-        200,       # Trasa     (1/4)
-        base // 4, # Kierownik (1/4)
-        300,       # Pomocnicy (1/4)
+        base // 4,  # Godzina
+        200,        # Trasa
+        base // 4,  # Kierownik
+        300,        # Pomocnicy
     ]
     max_pomocnicy = max(len(k["pomocnicy"]) for k in kursy)
     col_widths[3] += max(0, max_pomocnicy - 2) * 100
 
     szerokosc = sum(col_widths)
-    wysokosc = 160 + 60 * len(kursy) + 60
+    wysokosc  = 160 + 60 * len(kursy) + 60
 
-    img = Image.new('RGB', (szerokosc, wysokosc), color='#f9f9f9')
+    img  = Image.new('RGB', (szerokosc, wysokosc), color='#f9f9f9')
     draw = ImageDraw.Draw(img)
 
     try:
@@ -76,7 +119,6 @@ def create_schedule_image(dzien, kursy):
     except:
         font_title = font_header = font = ImageFont.load_default()
 
-    # Tytuł
     tw = draw.textlength(tytul, font=font_title)
     draw.text(((szerokosc - tw) / 2, 20), tytul, fill='black', font=font_title)
 
@@ -92,22 +134,19 @@ def create_schedule_image(dzien, kursy):
     row_height = 60
     y_header   = 100
 
-    # Nagłówki
     for i, header in enumerate(["Godzina", "Trasa", "Kierownik", "Pomocnicy"]):
         w = draw.textlength(header, font=font_header)
         draw.text((cx(i) - w / 2, y_header), header, fill='black', font=font_header)
 
-    # Oblicz odstęp x między wierszami danych i pozycję linii
     header_height = draw.textbbox((0, 0), "Ag", font=font_header)[3] - draw.textbbox((0, 0), "Ag", font=font_header)[1]
     font_height   = draw.textbbox((0, 0), "Ag", font=font)[3]        - draw.textbbox((0, 0), "Ag", font=font)[1]
-    x_gap         = row_height + 10 - font_height   # odstęp między wierszami danych
+    x_gap         = row_height + 10 - font_height
     header_bottom = y_header + header_height
     line_y        = round(header_bottom + x_gap / 2)
     y_first_row   = header_bottom + x_gap
 
     draw.line([(20, line_y), (szerokosc - 20, line_y)], fill='black')
 
-    # Wiersze danych
     y = y_first_row
     for kurs in kursy:
         godz  = kurs["godzina"]
@@ -139,8 +178,11 @@ def main():
     godziny = godziny_dla_dnia(dzien)
 
     if "kursy" not in st.session_state or st.session_state.get("last_date") != dzien:
-        st.session_state.kursy    = [{"godzina": "", "kierownik": None, "pomocnicy": [], "dlugosc_trasy": ""}]
+        st.session_state.kursy     = [{"godzina": "", "kierownik": None, "pomocnicy": [], "dlugosc_trasy": ""}]
         st.session_state.last_date = dzien
+        st.session_state.pop("img_bytes",      None)
+        st.session_state.pop("osoby_grafiku",  None)
+        st.session_state.pop("nazwa_grafiku",  None)
 
     def dodaj_kurs():
         st.session_state.kursy.append({"godzina": "", "kierownik": None, "pomocnicy": [], "dlugosc_trasy": ""})
@@ -159,7 +201,7 @@ def main():
         if dlugosc_trasy:     podglad += f"   [{NAZWY_TRASY[dlugosc_trasy]}]"
         if kurs["kierownik"]: podglad += f"   {kurs['kierownik']}"
         if kurs["pomocnicy"]: podglad += " + " + ", ".join(kurs["pomocnicy"])
-        
+
         with st.expander(f"Kurs {idx+1}{podglad}", expanded=(idx == len(st.session_state.kursy) - 1)):
             godzina_typ = st.radio(
                 f"Wybierz opcję godziny dla kursu {idx+1}",
@@ -210,9 +252,9 @@ def main():
                 )
 
             st.session_state.kursy[idx].update({
-                "godzina":      godz,
-                "kierownik":    kier or None,
-                "pomocnicy":    pomoc,
+                "godzina":       godz,
+                "kierownik":     kier or None,
+                "pomocnicy":     pomoc,
                 "dlugosc_trasy": trasa,
             })
 
@@ -229,11 +271,45 @@ def main():
         if not do_wykresu:
             st.warning("Dodaj co najmniej jeden kurs z godziną i kierownikiem.")
             return
+
         img = create_schedule_image(dzien.strftime("%Y-%m-%d"), do_wykresu)
         buf = io.BytesIO()
         img.save(buf, format="PNG")
-        st.image(img)
-        st.download_button("⬇️ Pobierz grafik PNG", data=buf.getvalue(), file_name=f"grafik_{dzien}.png", mime="image/png")
+
+        # Zbierz unikalne osoby z grafiku
+        osoby = set()
+        for k in do_wykresu:
+            if k["kierownik"]: osoby.add(k["kierownik"])
+            osoby.update(k["pomocnicy"])
+
+        st.session_state.img_bytes     = buf.getvalue()
+        st.session_state.osoby_grafiku = osoby
+        st.session_state.nazwa_grafiku = f"grafik_{dzien}.png"
+
+    # Pokaż grafik i przyciski jeśli wygenerowany
+    if "img_bytes" in st.session_state:
+        st.image(st.session_state.img_bytes)
+
+        col1, col2 = st.columns(2)
+        with col1:
+            st.download_button(
+                "⬇️ Pobierz grafik PNG",
+                data=st.session_state.img_bytes,
+                file_name=st.session_state.nazwa_grafiku,
+                mime="image/png"
+            )
+        with col2:
+            if st.button("📤 Wyślij grafik botem Telegram"):
+                with st.spinner("Wysyłanie..."):
+                    wyniki = wyslij_telegram(
+                        st.session_state.img_bytes,
+                        st.session_state.osoby_grafiku
+                    )
+                if "__error__" in wyniki:
+                    st.error(wyniki["__error__"])
+                else:
+                    for osoba, status in wyniki.items():
+                        st.write(f"{osoba}: {status}")
 
 if __name__ == "__main__":
     main()
