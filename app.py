@@ -15,20 +15,14 @@ KOLORY_TRASY = {"D": "#CC0000", "Ś": "#0055CC", "K": "#007700"}
 NAZWY_TRASY = {"D": "Długa", "Ś": "Średnia", "K": "Krótka"}
 ROZKLAD = {
     "R": [  # Roboczy (pon–pt)
-        {"godzina": "9:30", "trasa": "D"},
-        {"godzina": "11:45", "trasa": "D"},
-        {"godzina": "14:10", "trasa": "K"},
-        {"godzina": "15:20", "trasa": "D"},
-        {"godzina": "17:30", "trasa": "D"},
-        {"godzina": "19:30", "trasa": "K"},
+        {"godzina": "14:00", "trasa": "D"},
+        {"godzina": "16:00", "trasa": "D"},
     ],
     "W": [  # Weekend (sob–nd)
-        {"godzina": "9:10", "trasa": "D"},
-        {"godzina": "11:20", "trasa": "D"},
-        {"godzina": "13:30", "trasa": "Ś"},
-        {"godzina": "15:00", "trasa": "K"},
-        {"godzina": "15:50", "trasa": "D"},
-        {"godzina": "17:50", "trasa": "D"},
+        {"godzina": "9:30", "trasa": "D"},
+        {"godzina": "11:40", "trasa": "D"},
+        {"godzina": "13:50", "trasa": "D"},
+        {"godzina": "16:00", "trasa": "D"},
     ],
 }
 
